@@ -1,11 +1,15 @@
-export { start } from "./start.js";
-export { ensureJQuerySupport } from "./jquery-support.js";
+// 入口
+export { start }
+from "./start.js";
+export { ensureJQuerySupport }
+from "./jquery-support.js";
 export {
   setBootstrapMaxTime,
   setMountMaxTime,
   setUnmountMaxTime,
   setUnloadMaxTime,
-} from "./applications/timeouts.js";
+}
+from "./applications/timeouts.js";
 export {
   registerApplication,
   getMountedApps,
@@ -14,14 +18,19 @@ export {
   checkActivityFunctions,
   getAppNames,
   pathToActiveWhen,
-} from "./applications/apps.js";
-export { navigateToUrl } from "./navigation/navigation-events.js";
-export { triggerAppChange } from "./navigation/reroute.js";
+}
+from "./applications/apps.js";
+export { navigateToUrl }
+from "./navigation/navigation-events.js";
+export { triggerAppChange }
+from "./navigation/reroute.js";
 export {
   addErrorHandler,
   removeErrorHandler,
-} from "./applications/app-errors.js";
-export { mountRootParcel } from "./parcels/mount-parcel.js";
+}
+from "./applications/app-errors.js";
+export { mountRootParcel }
+from "./parcels/mount-parcel.js";
 
 export {
   NOT_LOADED,
@@ -35,7 +44,8 @@ export {
   MOUNTED,
   UNMOUNTING,
   SKIP_BECAUSE_BROKEN,
-} from "./applications/app.helpers.js";
+}
+from "./applications/app.helpers.js";
 
 import devtools from "./devtools/devtools";
 import { isInBrowser } from "./utils/runtime-environment.js";

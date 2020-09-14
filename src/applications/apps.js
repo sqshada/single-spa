@@ -63,7 +63,7 @@ export function getAppChanges() {
           appsToUnmount.push(app);
         }
         break;
-      // all other statuses are ignored
+        // all other statuses are ignored
     }
   });
 
@@ -88,12 +88,36 @@ export function getAppStatus(appName) {
   return app ? app.status : null;
 }
 
+/**
+ * 注册应用，两种方式
+ * registerApplication('app1', loadApp(url), activeWhen('/app1'), customProps)
+ * registerApplication({
+ *    name: 'app1',
+ *    app: loadApp(url),
+ *    activeWhen: activeWhen('/app1'),
+ *    customProps: {}
+ * })
+ * @param appNameOrConfig 应用名称或者应用配置对象
+ * @param appOrLoadApp 应用的加载方法，是一个 promise
+ * @param activeWhen 判断应用是否激活的一个方法，方法返回 true or false
+ * @param customProps 传递给子应用的 props 对象
+ */
 export function registerApplication(
   appNameOrConfig,
   appOrLoadApp,
   activeWhen,
   customProps
 ) {
+
+  /**
+   * 格式化用户传递的应用配置参数
+   * registration = {
+   *    name: 'app1',
+   *    loadApp: 返回promise的函数,
+   *    activeWhen: 返回boolean值的函数,
+   *    customProps: props 对象,
+   * }
+   */
   const registration = sanitizeArguments(
     appNameOrConfig,
     appOrLoadApp,
@@ -101,20 +125,22 @@ export function registerApplication(
     customProps
   );
 
+  // 判断 app 是否重名
   if (getAppNames().indexOf(registration.name) !== -1)
     throw Error(
       formatErrorMessage(
         21,
         __DEV__ &&
-          `There is already an app registered with name ${registration.name}`,
+        `There is already an app registered with name ${registration.name}`,
         registration.name
       )
     );
 
+  // 放入 apps 数组中
   apps.push(
-    assign(
-      {
+    assign({
         loadErrorTime: null,
+        // 应用状态
         status: NOT_LOADED,
         parcels: {},
         devtools: {
@@ -129,6 +155,8 @@ export function registerApplication(
   );
 
   if (isInBrowser) {
+    // https://zh-hans.single-spa.js.org/docs/api/#ensurejquerysupport
+    // 给 JQuery 打 patch
     ensureJQuerySupport();
     reroute();
   }
@@ -144,7 +172,7 @@ export function unregisterApplication(appName) {
       formatErrorMessage(
         25,
         __DEV__ &&
-          `Cannot unregister application '${appName}' because no such application has been registered`,
+        `Cannot unregister application '${appName}' because no such application has been registered`,
         appName
       )
     );
@@ -171,7 +199,7 @@ export function unloadApplication(appName, opts = { waitForUnmount: false }) {
       formatErrorMessage(
         27,
         __DEV__ &&
-          `Could not unload application '${appName}' because no such application has been registered`,
+        `Could not unload application '${appName}' because no such application has been registered`,
         appName
       )
     );
@@ -226,6 +254,7 @@ function immediatelyUnloadApp(app, resolve, reject) {
     .catch(reject);
 }
 
+// 验证参数是否合法
 function validateRegisterWithArguments(
   name,
   appOrLoadApp,
@@ -237,7 +266,7 @@ function validateRegisterWithArguments(
       formatErrorMessage(
         20,
         __DEV__ &&
-          `The 1st argument to registerApplication must be a non-empty string 'appName'`
+        `The 1st argument to registerApplication must be a non-empty string 'appName'`
       )
     );
 
@@ -246,7 +275,7 @@ function validateRegisterWithArguments(
       formatErrorMessage(
         23,
         __DEV__ &&
-          "The 2nd argument to registerApplication must be an application or loading application function"
+        "The 2nd argument to registerApplication must be an application or loading application function"
       )
     );
 
@@ -255,7 +284,7 @@ function validateRegisterWithArguments(
       formatErrorMessage(
         24,
         __DEV__ &&
-          "The 3rd argument to registerApplication must be an activeWhen function"
+        "The 3rd argument to registerApplication must be an activeWhen function"
       )
     );
 
@@ -264,12 +293,17 @@ function validateRegisterWithArguments(
       formatErrorMessage(
         22,
         __DEV__ &&
-          "The optional 4th argument is a customProps and must be an object"
+        "The optional 4th argument is a customProps and must be an object"
       )
     );
 }
 
+/**
+ * 验证应用配置对象的各个属性是否存在不合法的情况，存在则抛出错误
+ * @param {*} config = { name: 'app1', app: function, activeWhen: function, customProps: {} }
+ */
 export function validateRegisterWithConfig(config) {
+  // config 是数组或者 null 直接抛错
   if (Array.isArray(config) || config === null)
     throw Error(
       formatErrorMessage(
@@ -280,41 +314,45 @@ export function validateRegisterWithConfig(config) {
   const validKeys = ["name", "app", "activeWhen", "customProps"];
   const invalidKeys = Object.keys(config).reduce(
     (invalidKeys, prop) =>
-      validKeys.indexOf(prop) >= 0 ? invalidKeys : invalidKeys.concat(prop),
-    []
+    validKeys.indexOf(prop) >= 0 ? invalidKeys : invalidKeys.concat(prop), []
   );
+  // 如果存在 validKeys 之外的 key 抛错
   if (invalidKeys.length !== 0)
     throw Error(
       formatErrorMessage(
         38,
         __DEV__ &&
-          `The configuration object accepts only: ${validKeys.join(
+        `The configuration object accepts only: ${validKeys.join(
             ", "
           )}. Invalid keys: ${invalidKeys.join(", ")}.`,
         validKeys.join(", "),
         invalidKeys.join(", ")
       )
     );
+  // 应用名不是 string 或者为空报错
   if (typeof config.name !== "string" || config.name.length === 0)
     throw Error(
       formatErrorMessage(
         20,
         __DEV__ &&
-          "The config.name on registerApplication must be a non-empty string"
+        "The config.name on registerApplication must be a non-empty string"
       )
     );
+  // app 参数只能是一个 object 或者 function
+  // object 是一个被解析过的对象，包含各个生命周期
+  // 加载函数必须返回一个 promise
   if (typeof config.app !== "object" && typeof config.app !== "function")
     throw Error(
       formatErrorMessage(
         20,
         __DEV__ &&
-          "The config.app on registerApplication must be an application or a loading function"
+        "The config.app on registerApplication must be an application or a loading function"
       )
     );
+  // activeWhen 可以是字符串或者函数，也可以是两者组成的数组，表示当前应该被激活的应用的baseURL
   const allowsStringAndFunction = (activeWhen) =>
     typeof activeWhen === "string" || typeof activeWhen === "function";
-  if (
-    !allowsStringAndFunction(config.activeWhen) &&
+  if (!allowsStringAndFunction(config.activeWhen) &&
     !(
       Array.isArray(config.activeWhen) &&
       config.activeWhen.every(allowsStringAndFunction)
@@ -324,9 +362,10 @@ export function validateRegisterWithConfig(config) {
       formatErrorMessage(
         24,
         __DEV__ &&
-          "The config.activeWhen on registerApplication must be a string, function or an array with both"
+        "The config.activeWhen on registerApplication must be a string, function or an array with both"
       )
     );
+  // props 必须是一个对象
   if (!validCustomProps(config.customProps))
     throw Error(
       formatErrorMessage(
@@ -337,8 +376,7 @@ export function validateRegisterWithConfig(config) {
 }
 
 function validCustomProps(customProps) {
-  return (
-    !customProps ||
+  return (!customProps ||
     typeof customProps === "function" ||
     (typeof customProps === "object" &&
       customProps !== null &&
@@ -352,6 +390,7 @@ function sanitizeArguments(
   activeWhen,
   customProps
 ) {
+  // 判断是何种方式入参
   const usingObjectAPI = typeof appNameOrConfig === "object";
 
   const registration = {
@@ -362,12 +401,14 @@ function sanitizeArguments(
   };
 
   if (usingObjectAPI) {
+    // 参数是对象
     validateRegisterWithConfig(appNameOrConfig);
     registration.name = appNameOrConfig.name;
     registration.loadApp = appNameOrConfig.app;
     registration.activeWhen = appNameOrConfig.activeWhen;
     registration.customProps = appNameOrConfig.customProps;
   } else {
+    // 参数列表
     validateRegisterWithArguments(
       appNameOrConfig,
       appOrLoadApp,
@@ -380,8 +421,11 @@ function sanitizeArguments(
     registration.customProps = customProps;
   }
 
+  // 参数不是函数 返回一个 promise 对象
   registration.loadApp = sanitizeLoadApp(registration.loadApp);
+  // 没有 props 默认为 {}
   registration.customProps = sanitizeCustomProps(registration.customProps);
+  // 保证 activeWhen 是一个返回 boolean 的函数
   registration.activeWhen = sanitizeActiveWhen(registration.activeWhen);
 
   return registration;
@@ -402,9 +446,9 @@ function sanitizeCustomProps(customProps) {
 function sanitizeActiveWhen(activeWhen) {
   let activeWhenArray = Array.isArray(activeWhen) ? activeWhen : [activeWhen];
   activeWhenArray = activeWhenArray.map((activeWhenOrPath) =>
-    typeof activeWhenOrPath === "function"
-      ? activeWhenOrPath
-      : pathToActiveWhen(activeWhenOrPath)
+    typeof activeWhenOrPath === "function" ?
+    activeWhenOrPath :
+    pathToActiveWhen(activeWhenOrPath)
   );
 
   return (location) =>
@@ -448,16 +492,16 @@ export function toDynamicPathValidatorRegex(path) {
     const anyCharMaybeTrailingSlashRegex = "[^/]+/?";
     const commonStringSubPath = escapeStrRegex(path.slice(lastIndex, index));
 
-    regexStr += inDynamic
-      ? anyCharMaybeTrailingSlashRegex
-      : commonStringSubPath;
+    regexStr += inDynamic ?
+      anyCharMaybeTrailingSlashRegex :
+      commonStringSubPath;
 
     if (index === path.length && !inDynamic) {
       regexStr =
         // use charAt instead as we could not use es6 method endsWith
-        regexStr.charAt(regexStr.length - 1) === "/"
-          ? `${regexStr}.*$`
-          : `${regexStr}([/#].*)?$`;
+        regexStr.charAt(regexStr.length - 1) === "/" ?
+        `${regexStr}.*$` :
+        `${regexStr}([/#].*)?$`;
     }
 
     inDynamic = !inDynamic;
