@@ -25,6 +25,7 @@ import { assign } from "../utils/assign";
 
 const apps = [];
 
+
 export function getAppChanges() {
   const appsToUnload = [],
     appsToUnmount = [],
@@ -35,15 +36,18 @@ export function getAppChanges() {
   const currentTime = new Date().getTime();
 
   apps.forEach((app) => {
+    // boolean 是否应该被激活
     const appShouldBeActive =
       app.status !== SKIP_BECAUSE_BROKEN && shouldBeActive(app);
 
     switch (app.status) {
+      // 应用加载
       case LOAD_ERROR:
         if (currentTime - app.loadErrorTime >= 200) {
           appsToLoad.push(app);
         }
         break;
+        // 应用加载
       case NOT_LOADED:
       case LOADING_SOURCE_CODE:
         if (appShouldBeActive) {
@@ -53,11 +57,14 @@ export function getAppChanges() {
       case NOT_BOOTSTRAPPED:
       case NOT_MOUNTED:
         if (!appShouldBeActive && getAppUnloadInfo(toName(app))) {
+          // 应用移除
           appsToUnload.push(app);
         } else if (appShouldBeActive) {
+          // 应用挂载
           appsToMount.push(app);
         }
         break;
+        // 需要被卸载的应用
       case MOUNTED:
         if (!appShouldBeActive) {
           appsToUnmount.push(app);

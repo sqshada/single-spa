@@ -28,6 +28,16 @@ export function triggerAppChange() {
   return reroute();
 }
 
+/**
+ * 每次切换路由，将应用氛围4类
+ * 首次加载时执行 loadApp
+ * 后续路由切换执行 performAppChange
+ * 为四大类应用执行相应的操作
+ * single-spa 实际上是一个维护应用的状态机
+ *
+ * @param {*} pendingPromises
+ * @param {*} eventArguments
+ */
 export function reroute(pendingPromises = [], eventArguments) {
   if (appChangeUnderway) {
     return new Promise((resolve, reject) => {
@@ -39,14 +49,16 @@ export function reroute(pendingPromises = [], eventArguments) {
     });
   }
 
+  // 应用分为4大类
   const {
-    appsToUnload,
-    appsToUnmount,
-    appsToLoad,
-    appsToMount,
+    appsToUnload, // 需要移除的
+    appsToUnmount, // 需要卸载的
+    appsToLoad, // 需要加载的
+    appsToMount, // 需要挂载的
   } = getAppChanges();
   let appsThatChanged;
 
+  // 是否执行 start 方法
   if (isStarted()) {
     appChangeUnderway = true;
     appsThatChanged = appsToUnload.concat(
@@ -54,25 +66,31 @@ export function reroute(pendingPromises = [], eventArguments) {
       appsToUnmount,
       appsToMount
     );
+    // 执行改变
     return performAppChanges();
   } else {
+    // 未执行
     appsThatChanged = appsToLoad;
+    // 加载 apps
     return loadApps();
   }
 
+  // 整体返回一个立即resolved的promise，通过微任务来加载apps
   function loadApps() {
     return Promise.resolve().then(() => {
+      // 加载每个子应用，并做一系列的状态变更和验证（比如结果为 promise、子应用要导出生命周期函数）
       const loadPromises = appsToLoad.map(toLoadPromise);
 
       return (
+        // 保证所有加载子应用都微任务执行完成
         Promise.all(loadPromises)
-          .then(callAllEventListeners)
-          // there are no mounted apps, before start() is called, so we always return []
-          .then(() => [])
-          .catch((err) => {
-            callAllEventListeners();
-            throw err;
-          })
+        .then(callAllEventListeners)
+        // there are no mounted apps, before start() is called, so we always return []
+        .then(() => [])
+        .catch((err) => {
+          callAllEventListeners();
+          throw err;
+        })
       );
     });
   }
@@ -80,11 +98,12 @@ export function reroute(pendingPromises = [], eventArguments) {
   function performAppChanges() {
     return Promise.resolve().then(() => {
       // https://github.com/single-spa/single-spa/issues/545
+      // 自定义时间，在应用加载前可触发
       window.dispatchEvent(
         new CustomEvent(
-          appsThatChanged.length === 0
-            ? "single-spa:before-no-app-change"
-            : "single-spa:before-app-change",
+          appsThatChanged.length === 0 ?
+          "single-spa:before-no-app-change" :
+          "single-spa:before-app-change",
           getCustomEventDetail(true)
         )
       );
@@ -95,16 +114,20 @@ export function reroute(pendingPromises = [], eventArguments) {
           getCustomEventDetail(true)
         )
       );
+      // 移除应用 => 更改应用状态，执行 unload 生命周期函数，执行一些清理动作
       const unloadPromises = appsToUnload.map(toUnloadPromise);
 
+      // 卸载应用，更改状态，执行 unmount 生命周期函数
       const unmountUnloadPromises = appsToUnmount
         .map(toUnmountPromise)
+        // 卸载完后移除，通过注册微任务的方式实现
         .map((unmountPromise) => unmountPromise.then(toUnloadPromise));
 
       const allUnmountPromises = unmountUnloadPromises.concat(unloadPromises);
 
       const unmountAllPromise = Promise.all(allUnmountPromises);
 
+      // 卸载完后触发一个事件
       unmountAllPromise.then(() => {
         window.dispatchEvent(
           new CustomEvent(
@@ -126,6 +149,8 @@ export function reroute(pendingPromises = [], eventArguments) {
       /* These are the apps that are already bootstrapped and just need
        * to be mounted. They each wait for all unmounting apps to finish up
        * before they mount.
+       * 初始化和挂载app，其实做的事情很简单，就是改变app.status，执行生命周期函数
+       * 当然这里的初始化和挂载其实是前后脚一起完成的(只要中间用户没有切换路由)
        */
       const mountPromises = appsToMount
         .filter((appToMount) => appsToLoad.indexOf(appToMount) < 0)
@@ -160,9 +185,9 @@ export function reroute(pendingPromises = [], eventArguments) {
 
     try {
       const appChangeEventName =
-        appsThatChanged.length === 0
-          ? "single-spa:no-app-change"
-          : "single-spa:app-change";
+        appsThatChanged.length === 0 ?
+        "single-spa:no-app-change" :
+        "single-spa:app-change";
       window.dispatchEvent(
         new CustomEvent(appChangeEventName, getCustomEventDetail())
       );
@@ -246,7 +271,7 @@ export function reroute(pendingPromises = [], eventArguments) {
         newAppStatuses,
         appsByNewStatus,
         totalAppChanges: appsThatChanged.length,
-        originalEvent: eventArguments?.[0],
+        originalEvent: eventArguments ? .[0],
       },
     };
 
