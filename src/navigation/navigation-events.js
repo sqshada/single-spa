@@ -34,7 +34,7 @@ export function navigateToUrl(obj) {
       formatErrorMessage(
         14,
         __DEV__ &&
-          `singleSpaNavigate/navigateToUrl must be either called with a string url, with an <a> tag as its context, or with an event whose currentTarget is an <a> tag`
+        `singleSpaNavigate/navigateToUrl must be either called with a string url, with an <a> tag as its context, or with an event whose currentTarget is an <a> tag`
       )
     );
   }
@@ -91,7 +91,7 @@ function urlReroute() {
 }
 
 function patchedUpdateState(updateState, methodName) {
-  return function () {
+  return function() {
     const urlBefore = window.location.href;
     const result = updateState.apply(this, arguments);
     const urlAfter = window.location.href;
@@ -124,14 +124,14 @@ function createPopStateEvent(state, originalMethodName) {
 }
 
 if (isInBrowser) {
-  // We will trigger an app change for any routing events.
+  // We will trigger an app change for any routing events. // 监听 hashchange, popstate 事件
   window.addEventListener("hashchange", urlReroute);
   window.addEventListener("popstate", urlReroute);
 
   // Monkeypatch addEventListener so that we can ensure correct timing
   const originalAddEventListener = window.addEventListener;
   const originalRemoveEventListener = window.removeEventListener;
-  window.addEventListener = function (eventName, fn) {
+  window.addEventListener = function(eventName, fn) {
     if (typeof fn === "function") {
       if (
         routingEventsListeningTo.indexOf(eventName) >= 0 &&
@@ -145,7 +145,7 @@ if (isInBrowser) {
     return originalAddEventListener.apply(this, arguments);
   };
 
-  window.removeEventListener = function (eventName, listenerFn) {
+  window.removeEventListener = function(eventName, listenerFn) {
     if (typeof listenerFn === "function") {
       if (routingEventsListeningTo.indexOf(eventName) >= 0) {
         capturedEventListeners[eventName] = capturedEventListeners[
@@ -172,7 +172,7 @@ if (isInBrowser) {
       formatErrorMessage(
         41,
         __DEV__ &&
-          "single-spa has been loaded twice on the page. This can result in unexpected behavior."
+        "single-spa has been loaded twice on the page. This can result in unexpected behavior."
       )
     );
   } else {

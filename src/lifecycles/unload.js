@@ -10,16 +10,23 @@ import { reasonableTime } from "../applications/timeouts.js";
 
 const appsToUnload = {};
 
+/**
+ * 移除应用，更改应用状态，执行 unload 生命周期函数，执行清理操作
+ * 一般情况是不会执行移除操作的，除非手动执行 unloadApplication 方法
+ * @param {*} app
+ */
 export function toUnloadPromise(app) {
   return Promise.resolve().then(() => {
     const unloadInfo = appsToUnload[toName(app)];
 
     if (!unloadInfo) {
       /* No one has called unloadApplication for this app,
+       * 一般情况下都不需要移除，只有在调用unloadApplication方法手动执行移除时才会
        */
       return app;
     }
 
+    // 已经卸载了，执行一些清理操作
     if (app.status === NOT_LOADED) {
       /* This app is already unloaded. We just need to clean up
        * anything that still thinks we need to unload the app.
@@ -54,6 +61,9 @@ export function toUnloadPromise(app) {
   });
 }
 
+// 移除完成，执行一些清理动作，其实就是从appsToUnload数组中移除该app，移除生命周期函数，更改app.status
+// 但应用不是真的被移除，后面再激活时不需要重新去下载资源,，只是做一些状态上的变更
+// 当然load的那个过程还是需要的，这点可能需要再确认一下
 function finishUnloadingApp(app, unloadInfo) {
   delete appsToUnload[toName(app)];
 

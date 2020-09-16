@@ -39,7 +39,7 @@ export function setBootstrapMaxTime(time, dieOnTimeout, warningMillis) {
       formatErrorMessage(
         16,
         __DEV__ &&
-          `bootstrap max time must be a positive integer number of milliseconds`
+        `bootstrap max time must be a positive integer number of milliseconds`
       )
     );
   }
@@ -57,7 +57,7 @@ export function setMountMaxTime(time, dieOnTimeout, warningMillis) {
       formatErrorMessage(
         17,
         __DEV__ &&
-          `mount max time must be a positive integer number of milliseconds`
+        `mount max time must be a positive integer number of milliseconds`
       )
     );
   }
@@ -75,7 +75,7 @@ export function setUnmountMaxTime(time, dieOnTimeout, warningMillis) {
       formatErrorMessage(
         18,
         __DEV__ &&
-          `unmount max time must be a positive integer number of milliseconds`
+        `unmount max time must be a positive integer number of milliseconds`
       )
     );
   }
@@ -93,7 +93,7 @@ export function setUnloadMaxTime(time, dieOnTimeout, warningMillis) {
       formatErrorMessage(
         19,
         __DEV__ &&
-          `unload max time must be a positive integer number of milliseconds`
+        `unload max time must be a positive integer number of milliseconds`
       )
     );
   }
@@ -105,6 +105,12 @@ export function setUnloadMaxTime(time, dieOnTimeout, warningMillis) {
   };
 }
 
+/**
+ * 合理的时间，即生命周期函数合理的执行时间
+ * 在合理的时间内执行生命周期函数，并将函数的执行结果resolve出去
+ * @param {*} appOrParcel => app
+ * @param {*} lifecycle => 生命周期函数名
+ */
 export function reasonableTime(appOrParcel, lifecycle) {
   const timeoutConfig = appOrParcel.timeouts[lifecycle];
   const warningPeriod = timeoutConfig.warningMillis;
@@ -114,6 +120,7 @@ export function reasonableTime(appOrParcel, lifecycle) {
     let finished = false;
     let errored = false;
 
+    // 是在执行生命周期函数时向子应用传递的props，所以之前执行loadApp传递props不会到子应用，
     appOrParcel[lifecycle](getProps(appOrParcel))
       .then((val) => {
         finished = true;
@@ -130,7 +137,7 @@ export function reasonableTime(appOrParcel, lifecycle) {
     const errMsg = formatErrorMessage(
       31,
       __DEV__ &&
-        `Lifecycle function ${lifecycle} for ${type} ${toName(
+      `Lifecycle function ${lifecycle} for ${type} ${toName(
           appOrParcel
         )} lifecycle did not resolve or reject for ${timeoutConfig.millis} ms.`,
       lifecycle,
@@ -166,8 +173,7 @@ export function ensureValidAppTimeouts(timeouts) {
   const result = {};
 
   for (let key in globalTimeoutConfig) {
-    result[key] = assign(
-      {},
+    result[key] = assign({},
       globalTimeoutConfig[key],
       (timeouts && timeouts[key]) || {}
     );

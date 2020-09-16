@@ -11,6 +11,7 @@ import { toUnmountPromise } from "./unmount.js";
 let beforeFirstMountFired = false;
 let firstMountFired = false;
 
+// 挂载app，执行mount生命周期函数，并更改app.status
 export function toMountPromise(appOrParcel, hardFail) {
   return Promise.resolve().then(() => {
     if (appOrParcel.status !== NOT_MOUNTED) {

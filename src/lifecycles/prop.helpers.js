@@ -4,12 +4,24 @@ import { assign } from "../utils/assign.js";
 import { isParcel, toName } from "../applications/app.helpers.js";
 import { formatErrorMessage } from "../applications/app-errors.js";
 
+/**
+ * 得到传递给子应用的props
+ * @param {} appOrParcel => app
+ * 以下返回内容其实在官网也都有提到，比如singleSpa实例，目的是为了子应用不需要重复引入single-spa
+ * return {
+ *    ...customProps,
+ *    name,
+ *    mountParcel: mountParcel.bind(appOrParcel),
+ *    singleSpa,
+ * }
+ */
 export function getProps(appOrParcel) {
   const name = toName(appOrParcel);
+  // 有点多余，前面参数格式化已经保证 customProps 一定是一个对象
   let customProps =
-    typeof appOrParcel.customProps === "function"
-      ? appOrParcel.customProps(name, window.location)
-      : appOrParcel.customProps;
+    typeof appOrParcel.customProps === "function" ?
+    appOrParcel.customProps(name, window.location) :
+    appOrParcel.customProps;
   if (
     typeof customProps !== "object" ||
     customProps === null ||
@@ -20,7 +32,7 @@ export function getProps(appOrParcel) {
       formatErrorMessage(
         40,
         __DEV__ &&
-          `single-spa: ${name}'s customProps function must return an object. Received ${customProps}`
+        `single-spa: ${name}'s customProps function must return an object. Received ${customProps}`
       ),
       name,
       customProps

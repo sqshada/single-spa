@@ -294,13 +294,18 @@ export function reroute(pendingPromises = [], eventArguments) {
  * https://github.com/single-spa/single-spa/issues/524
  */
 function tryToBootstrapAndMount(app, unmountAllPromise) {
+  /**
+   * 应用加载时如果发生延迟，防止用户没有等待就切换到另一个路由，因此做了检测
+   */
   if (shouldBeActive(app)) {
     return toBootstrapPromise(app).then((app) =>
       unmountAllPromise.then(() =>
+        // 防止应用在挂载前已处于活动状态，做检测
         shouldBeActive(app) ? toMountPromise(app) : app
       )
     );
   } else {
+    // 卸载
     return unmountAllPromise.then(() => app);
   }
 }
